@@ -1,35 +1,48 @@
 package com.abler31.geoapp.presentation
 
-import android.annotation.SuppressLint
-import android.app.Application
-import android.location.Location
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 
 import androidx.lifecycle.ViewModel
-import com.google.android.gms.location.*
+import androidx.lifecycle.viewModelScope
+import com.abler31.geoapp.domain.usecases.AddMarker
+import com.abler31.geoapp.domain.usecases.DeleteMarker
+import com.abler31.geoapp.domain.usecases.GetMarkers
+import kotlinx.coroutines.launch
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import javax.inject.Inject
 
-class MainViewModel(application: Application): ViewModel() {
-    private val fusedLocationClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(application)
+class MainViewModel @Inject constructor(
+    private val addMarkerUseCase: AddMarker,
+    private val deleteMarkerUseCase: DeleteMarker,
+    private val getMarkersUseCase: GetMarkers
+): ViewModel() {
 
-    private val _currentLocation = MutableLiveData<Location>()
-    val currentLocation: LiveData<Location> get() = _currentLocation
+    private val _markers = MutableLiveData<List<Marker>>()
+    val markers: LiveData<List<Marker>> = _markers
 
-    @SuppressLint("MissingPermission")
-    fun startLocationUpdates() {
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000L).apply {
-            setMinUpdateIntervalMillis(5000L)
-        }.build()
-
-        fusedLocationClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.lastLocation?.let { location ->
-                    _currentLocation.value = location
-                }
-            }
-        }, null)
+    fun loadMarkers() {
+        viewModelScope.launch {
+            _markers.value = getMarkersUseCase.invoke()
+        }
     }
 
+    fun addMarker(name: String, latitude: Double, longitude: Double, map: MapView) {
+        viewModelScope.launch {
+            val marker = Marker(map)
+            marker.position = GeoPoint(latitude, longitude)
+            addMarkerUseCase(marker)
+            loadMarkers() // Обновить список маркеров после добавления
+        }
+    }
+
+    fun deleteMarker(marker: Marker) {
+        viewModelScope.launch {
+            deleteMarkerUseCase(marker)
+            loadMarkers()
+        }
+    }
 
 }
