@@ -50,6 +50,8 @@ dependencies {
     implementation ("org.osmdroid:osmdroid-android:6.1.18")
     implementation ("com.google.android.gms:play-services-location:21.3.0")
     implementation ("com.google.dagger:dagger:2.51.1")
+    implementation ("com.google.dagger:dagger-android:2.51.1")
+    kapt ("com.google.dagger:dagger-android-processor:2.51.1")
     kapt ("com.google.dagger:dagger-compiler:2.51.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
