@@ -1,7 +1,7 @@
 package com.abler31.geoapp.domain.repository
 
-import android.location.Location
-import org.osmdroid.views.overlay.Marker
+import com.abler31.geoapp.domain.models.Marker
+
 
 interface MainRepository {
     suspend fun getMarkers(): List<Marker>
