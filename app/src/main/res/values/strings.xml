@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">GeoApp</string>
+    <string name="delete_marker">Удалить</string>
+    <string name="navigate_to_marker">Маршрут</string>
+    <string name="add_marker">Добавить маркер</string>
+    <string name="enter_marker_name">Введите название</string>
+    <string name="add">Добавить</string>
+    <string name="cancel">Отмена</string>
 </resources>

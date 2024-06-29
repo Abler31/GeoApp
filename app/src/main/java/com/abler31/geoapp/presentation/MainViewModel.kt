@@ -5,13 +5,12 @@ import androidx.lifecycle.MutableLiveData
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.abler31.geoapp.domain.models.Marker
 import com.abler31.geoapp.domain.usecases.AddMarker
 import com.abler31.geoapp.domain.usecases.DeleteMarker
 import com.abler31.geoapp.domain.usecases.GetMarkers
+import com.google.android.gms.location.*
 import kotlinx.coroutines.launch
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
 import javax.inject.Inject
 
 class MainViewModel @Inject constructor(
@@ -29,20 +28,17 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addMarker(name: String, latitude: Double, longitude: Double, map: MapView) {
+    fun addMarker(name: String, latitude: Double, longitude: Double) {
         viewModelScope.launch {
-            val marker = Marker(map)
-            marker.position = GeoPoint(latitude, longitude)
-            addMarkerUseCase(marker)
-            loadMarkers() // Обновить список маркеров после добавления
+            addMarkerUseCase(Marker(name = name, latitude = latitude, longitude = longitude))
+            _markers.value = getMarkersUseCase.invoke()// Обновить список маркеров после добавления
         }
     }
 
     fun deleteMarker(marker: Marker) {
         viewModelScope.launch {
             deleteMarkerUseCase(marker)
-            loadMarkers()
+            _markers.value = getMarkersUseCase.invoke()
         }
     }
-
 }
