@@ -9,7 +9,6 @@ import com.abler31.geoapp.domain.models.Marker
 import com.abler31.geoapp.domain.usecases.AddMarker
 import com.abler31.geoapp.domain.usecases.DeleteMarker
 import com.abler31.geoapp.domain.usecases.GetMarkers
-import com.google.android.gms.location.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,7 +16,7 @@ class MainViewModel @Inject constructor(
     private val addMarkerUseCase: AddMarker,
     private val deleteMarkerUseCase: DeleteMarker,
     private val getMarkersUseCase: GetMarkers
-): ViewModel() {
+) : ViewModel() {
 
     private val _markers = MutableLiveData<List<Marker>>()
     val markers: LiveData<List<Marker>> = _markers

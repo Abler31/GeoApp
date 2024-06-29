@@ -2,14 +2,11 @@ package com.abler31.geoapp.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import com.abler31.geoapp.R
 import com.abler31.geoapp.app.App
 import com.abler31.geoapp.domain.models.Marker
@@ -19,18 +16,20 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.Marker as OsmMarker
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import javax.inject.Inject
 
 class MainActivity : AppCompatActivity() {
     private lateinit var map: MapView
+
     @Inject
     lateinit var viewModelFactory: MainViewModelFactory
 
-    lateinit var myLocationOverlay: MyLocationNewOverlay
+    private lateinit var myLocationOverlay: MyLocationNewOverlay
     private lateinit var mapEventsOverlay: MapEventsOverlay
-    private val vm: MainViewModel by viewModels{viewModelFactory}
+    private val vm: MainViewModel by viewModels { viewModelFactory }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -42,19 +41,25 @@ class MainActivity : AppCompatActivity() {
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
 
-        initMapEventsOverlay()
-
         // Запрос разрешений на использование геолокации
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+            )
         } else {
-            //getCurrentLocation()
+            getCurrentLocation()
         }
+
+        initMapEventsOverlay()
 
         vm.markers.observe(this) { markers ->
             // Отображение маркеров на карте
             map.overlays.clear()
+            map.overlays.add(myLocationOverlay)
 
             markers.forEach { marker ->
                 addMapMarker(marker)
@@ -64,12 +69,15 @@ class MainActivity : AppCompatActivity() {
                 map.overlays.add(mapEventsOverlay)
             }
         }
-
         vm.loadMarkers()
-
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             getCurrentLocation()
@@ -88,23 +96,22 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
-
         mapEventsOverlay = MapEventsOverlay(mapEventsReceiver)
     }
 
     private fun getCurrentLocation() {
-        myLocationOverlay = MyLocationNewOverlay(map)
+        myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map)
         myLocationOverlay.enableMyLocation()
         myLocationOverlay.enableFollowLocation()
         myLocationOverlay.setPersonAnchor(0.5f, 0.5f)
-        map.overlays.add(myLocationOverlay)
         map.controller.animateTo(myLocationOverlay.myLocation)
         map.controller.setZoom(15.5)
+        map.overlays.add(myLocationOverlay)
     }
 
     private fun addMapMarker(
         marker: Marker
-    ){
+    ) {
         val mapMarker = OsmMarker(map)
         mapMarker.position = GeoPoint(marker.latitude, marker.longitude)
         mapMarker.setAnchor(OsmMarker.ANCHOR_CENTER, OsmMarker.ANCHOR_BOTTOM)
@@ -115,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         }
         map.overlays.add(mapMarker)
         map.invalidate()
-        }
+    }
 
     private fun showMarkerOptionsDialog(marker: Marker) {
         // Диалоговое окно для удаления метки или построения маршрута
