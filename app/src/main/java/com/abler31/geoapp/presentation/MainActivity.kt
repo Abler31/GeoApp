@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -40,6 +41,8 @@ class MainActivity : AppCompatActivity() {
         map = findViewById(R.id.osmmap)
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
+
+        myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map)
 
         // Запрос разрешений на использование геолокации
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -81,6 +84,11 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             getCurrentLocation()
+        } else {
+            Toast.makeText(
+                this,
+                "Разрешение на использование геолокации необходимо для работы приложения",
+                Toast.LENGTH_LONG).show()
         }
     }
 
@@ -100,7 +108,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getCurrentLocation() {
-        myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map)
         myLocationOverlay.enableMyLocation()
         myLocationOverlay.enableFollowLocation()
         myLocationOverlay.setPersonAnchor(0.5f, 0.5f)
