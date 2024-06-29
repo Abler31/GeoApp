@@ -109,10 +109,21 @@ class MainActivity : AppCompatActivity() {
         mapMarker.position = GeoPoint(marker.latitude, marker.longitude)
         mapMarker.setAnchor(OsmMarker.ANCHOR_CENTER, OsmMarker.ANCHOR_BOTTOM)
         mapMarker.title = marker.name
+        mapMarker.setOnMarkerClickListener { _, _ ->
+            showMarkerOptionsDialog(marker)
+            return@setOnMarkerClickListener true
+        }
         map.overlays.add(mapMarker)
         map.invalidate()
         }
 
+    private fun showMarkerOptionsDialog(marker: Marker) {
+        // Диалоговое окно для удаления метки или построения маршрута
+        val dialog = MarkerOptionsDialogFragment(marker) {
+            vm.deleteMarker(marker)
+        }
+        dialog.show(supportFragmentManager, "MarkerOptionsDialog")
+    }
 
     private fun showAddMarkerDialog(geoPoint: GeoPoint) {
         // Диалоговое окно для ввода названия метки
