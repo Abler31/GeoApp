@@ -1,7 +1,10 @@
 package com.abler31.geoapp.presentation
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
@@ -161,6 +164,17 @@ class MainActivity : AppCompatActivity() {
         map.overlays.removeAll { it is Polyline }
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                if (!isInternetAvailable(this@MainActivity)){
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Отсутствует интернет",
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
+                    }
+                    return@launch
+                }
                 val roadManager =
                     OSRMRoadManager(this@MainActivity, System.getProperty("http.agent"))
                 roadManager.setMean(OSRMRoadManager.MEAN_BY_FOOT)
@@ -185,5 +199,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    fun isInternetAvailable(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }
