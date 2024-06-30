@@ -160,17 +160,29 @@ class MainActivity : AppCompatActivity() {
         // Логика для построения маршрута от текущей позиции до метки
         map.overlays.removeAll { it is Polyline }
         CoroutineScope(Dispatchers.IO).launch {
-            val roadManager = OSRMRoadManager(this@MainActivity, System.getProperty("http.agent"))
-            roadManager.setMean(OSRMRoadManager.MEAN_BY_FOOT)
-            val wayPoints = arrayListOf(
-                myLocationOverlay.myLocation,
-                GeoPoint(marker.latitude, marker.longitude)
-            )
-            val road = roadManager.getRoad(wayPoints)
-            val roadOverlay = RoadManager.buildRoadOverlay(road)
-            withContext(Dispatchers.Main) {
-                map.overlays.add(0, roadOverlay)
-                map.invalidate()
+            try {
+                val roadManager =
+                    OSRMRoadManager(this@MainActivity, System.getProperty("http.agent"))
+                roadManager.setMean(OSRMRoadManager.MEAN_BY_FOOT)
+                val wayPoints = arrayListOf(
+                    myLocationOverlay.myLocation,
+                    GeoPoint(marker.latitude, marker.longitude)
+                )
+                val road = roadManager.getRoad(wayPoints)
+                val roadOverlay = RoadManager.buildRoadOverlay(road)
+                withContext(Dispatchers.Main) {
+                    map.overlays.add(0, roadOverlay)
+                    map.invalidate()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Ошибка при построении маршрута",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
             }
         }
     }
