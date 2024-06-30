@@ -3,6 +3,8 @@ package com.abler31.geoapp.presentation
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.appcompat.app.AppCompatActivity
@@ -11,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.abler31.geoapp.R
 import com.abler31.geoapp.app.App
 import com.abler31.geoapp.domain.models.Marker
@@ -51,12 +54,17 @@ class MainActivity : AppCompatActivity() {
         map = findViewById(R.id.osmmap)
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
+        map.setBuiltInZoomControls(false);
 
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map)
         // Запрос разрешений на использование геолокации
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
         ) {
+            //начальное позиционирование
+            val mapPoint = GeoPoint(55.747304577692255, 37.6314018813438)
+            map.controller.setZoom(13.5)
+            map.controller.animateTo(mapPoint)
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -96,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(
                 this,
-                "Разрешение на использование геолокации необходимо для работы приложения",
+                "Для работы приложения необходимо разрешение на использование геолокации",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -118,8 +126,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getCurrentLocation() {
+        val currentDraw =
+            ResourcesCompat.getDrawable(resources, R.drawable.ic_my_tracker_46dp, null)
+        var currentIcon: Bitmap? = null
+        if (currentDraw is BitmapDrawable) {
+            currentIcon = currentDraw.bitmap
+        }
         myLocationOverlay.enableMyLocation()
         myLocationOverlay.enableFollowLocation()
+        myLocationOverlay.setPersonIcon(currentIcon)
+        myLocationOverlay.setDirectionIcon(currentIcon)
         myLocationOverlay.setPersonAnchor(0.5f, 0.5f)
         map.controller.animateTo(myLocationOverlay.myLocation)
         map.controller.setZoom(15.5)
@@ -164,7 +180,8 @@ class MainActivity : AppCompatActivity() {
         map.overlays.removeAll { it is Polyline }
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (!isInternetAvailable(this@MainActivity)){
+                //Для построения маршрута необходим интернет
+                if (!isInternetAvailable(this@MainActivity)) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             this@MainActivity,
@@ -201,10 +218,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun isInternetAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private fun isInternetAvailable(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
-        val networkCapabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        val networkCapabilities =
+            connectivityManager.getNetworkCapabilities(network) ?: return false
         return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }
