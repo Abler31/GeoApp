@@ -11,12 +11,19 @@ import androidx.core.content.ContextCompat
 import com.abler31.geoapp.R
 import com.abler31.geoapp.app.App
 import com.abler31.geoapp.domain.models.Marker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.osmdroid.bonuspack.routing.OSRMRoadManager
+import org.osmdroid.bonuspack.routing.RoadManager
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.Marker as OsmMarker
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
@@ -43,7 +50,6 @@ class MainActivity : AppCompatActivity() {
         map.setMultiTouchControls(true)
 
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map)
-
         // Запрос разрешений на использование геолокации
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -88,7 +94,8 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(
                 this,
                 "Разрешение на использование геолокации необходимо для работы приложения",
-                Toast.LENGTH_LONG).show()
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -133,9 +140,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showMarkerOptionsDialog(marker: Marker) {
         // Диалоговое окно для удаления метки или построения маршрута
-        val dialog = MarkerOptionsDialogFragment(marker) {
-            vm.deleteMarker(marker)
-        }
+        val dialog = MarkerOptionsDialogFragment(
+            marker,
+            { vm.deleteMarker(marker) },
+            { navigateToMarker(marker) }
+        )
         dialog.show(supportFragmentManager, "MarkerOptionsDialog")
     }
 
@@ -145,5 +154,24 @@ class MainActivity : AppCompatActivity() {
             vm.addMarker(name, geoPoint.latitude, geoPoint.longitude)
         }
         dialog.show(supportFragmentManager, "AddMarkerDialog")
+    }
+
+    private fun navigateToMarker(marker: Marker) {
+        // Логика для построения маршрута от текущей позиции до метки
+        map.overlays.removeAll { it is Polyline }
+        CoroutineScope(Dispatchers.IO).launch {
+            val roadManager = OSRMRoadManager(this@MainActivity, System.getProperty("http.agent"))
+            roadManager.setMean(OSRMRoadManager.MEAN_BY_FOOT)
+            val wayPoints = arrayListOf(
+                myLocationOverlay.myLocation,
+                GeoPoint(marker.latitude, marker.longitude)
+            )
+            val road = roadManager.getRoad(wayPoints)
+            val roadOverlay = RoadManager.buildRoadOverlay(road)
+            withContext(Dispatchers.Main) {
+                map.overlays.add(0, roadOverlay)
+                map.invalidate()
+            }
+        }
     }
 }

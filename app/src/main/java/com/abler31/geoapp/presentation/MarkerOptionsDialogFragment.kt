@@ -9,22 +9,24 @@ import com.abler31.geoapp.domain.models.Marker
 
 class MarkerOptionsDialogFragment(
     private val marker: Marker,
-    private val onDeleteMarker: () -> Unit
+    private val onDeleteMarker: () -> Unit,
+    private val navigateToMarker: () -> Unit
 ) : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireContext())
             .setTitle(marker.name)
-            .setItems(arrayOf(getString(R.string.delete_marker), getString(R.string.navigate_to_marker))) { _, which ->
+            .setItems(
+                arrayOf(
+                    getString(R.string.delete_marker),
+                    getString(R.string.navigate_to_marker)
+                )
+            ) { _, which ->
                 when (which) {
                     0 -> onDeleteMarker()
                     1 -> navigateToMarker()
                 }
             }
             .create()
-    }
-
-    private fun navigateToMarker() {
-        // Логика для построения маршрута от текущей позиции до метки
     }
 }
